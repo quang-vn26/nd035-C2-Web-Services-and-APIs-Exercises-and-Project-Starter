@@ -1,4 +1,4 @@
-package com.udacity.pricing.test.web;
+package com.udacity.pricing;
 
 import com.udacity.pricing.api.PricingController;
 import com.udacity.pricing.service.PricingService;

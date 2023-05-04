@@ -33,6 +33,8 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 /**
  * Implements testing of the CarController class.
@@ -58,6 +60,11 @@ public class CarControllerTest {
     @MockBean
     private MapsClient mapsClient;
 
+    @Autowired
+    private MockMvc mockMvc;
+
+    private static Car car = new Car();
+
     /**
      * Creates pre-requisites for testing, such as an example car.
      */
@@ -76,7 +83,7 @@ public class CarControllerTest {
      */
     @Test
     public void createCar() throws Exception {
-        Car car = getCar();
+        car = getCar();
         mvc.perform(
                 post(new URI("/cars"))
                         .content(json.write(car).getJson())
@@ -96,6 +103,19 @@ public class CarControllerTest {
          *   the whole list of vehicles. This should utilize the car from `getCar()`
          *   below (the vehicle will be the first in the list).
          */
+        mockMvc.perform(get("/cars"))
+                .andDo(MockMvcResultHandlers.print())
+                .andExpect(status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$._embedded.carList",hasSize(1)))
+                .andExpect(MockMvcResultMatchers.jsonPath("$._embedded.carList[0].id").value(1))
+                .andExpect(MockMvcResultMatchers.jsonPath("$._embedded.carList[0].details.body").value(car.getDetails().getBody()))
+                .andExpect(MockMvcResultMatchers.jsonPath("$._embedded.carList[0].details.model").value(car.getDetails().getModel()))
+                .andExpect(MockMvcResultMatchers.jsonPath("$._embedded.carList[0].details.manufacturer.code").value(car.getDetails().getManufacturer().getCode()))
+                .andExpect(MockMvcResultMatchers.jsonPath("$._embedded.carList[0].details.numberOfDoors").value(car.getDetails().getNumberOfDoors()))
+        ;
+//                .andExpect(MockMvcResultMatchers.jsonPath("price").isNotEmpty())
+//                .andExpect(MockMvcResultMatchers.jsonPath("currency").value("USD"));
+
 
     }
 
@@ -109,6 +129,15 @@ public class CarControllerTest {
          * TODO: Add a test to check that the `get` method works by calling
          *   a vehicle by ID. This should utilize the car from `getCar()` below.
          */
+        mockMvc.perform(get("/cars/1"))
+                .andDo(MockMvcResultHandlers.print())
+                .andExpect(status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("id").value(1))
+                .andExpect(MockMvcResultMatchers.jsonPath("details.body").value(car.getDetails().getBody()))
+                .andExpect(MockMvcResultMatchers.jsonPath("details.model").value(car.getDetails().getModel()))
+                .andExpect(MockMvcResultMatchers.jsonPath("details.manufacturer.code").value(car.getDetails().getManufacturer().getCode()))
+                .andExpect(MockMvcResultMatchers.jsonPath("details.numberOfDoors").value(car.getDetails().getNumberOfDoors()))
+                .andReturn();;
     }
 
     /**
@@ -122,6 +151,8 @@ public class CarControllerTest {
          *   when the `delete` method is called from the Car Controller. This
          *   should utilize the car from `getCar()` below.
          */
+        mvc.perform(delete(new URI("/cars/1")))
+                .andExpect(status().isNoContent());
     }
 
     /**
@@ -129,7 +160,6 @@ public class CarControllerTest {
      * @return an example Car object
      */
     private Car getCar() {
-        Car car = new Car();
         car.setLocation(new Location(40.730610, -73.935242));
         Details details = new Details();
         Manufacturer manufacturer = new Manufacturer(101, "Chevrolet");
