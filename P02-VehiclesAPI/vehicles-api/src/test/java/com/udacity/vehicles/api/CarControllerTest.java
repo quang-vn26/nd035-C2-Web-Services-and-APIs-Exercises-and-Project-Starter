@@ -4,9 +4,8 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -113,10 +112,6 @@ public class CarControllerTest {
                 .andExpect(MockMvcResultMatchers.jsonPath("$._embedded.carList[0].details.manufacturer.code").value(car.getDetails().getManufacturer().getCode()))
                 .andExpect(MockMvcResultMatchers.jsonPath("$._embedded.carList[0].details.numberOfDoors").value(car.getDetails().getNumberOfDoors()))
         ;
-//                .andExpect(MockMvcResultMatchers.jsonPath("price").isNotEmpty())
-//                .andExpect(MockMvcResultMatchers.jsonPath("currency").value("USD"));
-
-
     }
 
     /**
@@ -137,7 +132,7 @@ public class CarControllerTest {
                 .andExpect(MockMvcResultMatchers.jsonPath("details.model").value(car.getDetails().getModel()))
                 .andExpect(MockMvcResultMatchers.jsonPath("details.manufacturer.code").value(car.getDetails().getManufacturer().getCode()))
                 .andExpect(MockMvcResultMatchers.jsonPath("details.numberOfDoors").value(car.getDetails().getNumberOfDoors()))
-                .andReturn();;
+                .andReturn();
     }
 
     /**
@@ -154,6 +149,42 @@ public class CarControllerTest {
         mvc.perform(delete(new URI("/cars/1")))
                 .andExpect(status().isNoContent());
     }
+    @Test
+    public void updateCar() throws Exception {
+
+        Car carupdate = car;
+        carupdate.setId(car.getId());
+        carupdate.setCondition(Condition.NEW);
+        carupdate.getDetails().setManufacturer(new Manufacturer(104, "BMW2"));
+        carupdate.getDetails().setNumberOfDoors(9);
+        carupdate.getDetails().setMileage(1);
+        carupdate.getDetails().setExternalColor("blue");
+        carupdate.getDetails().setEngine("demo");
+        carupdate.getDetails().setModelYear(2022);
+        carupdate.setLocation(new Location(12D,22D));
+
+
+        when(carService.save(any(Car.class))).thenReturn(carupdate);
+
+        mvc.perform(
+                        put(new URI("/cars/" + carupdate.getId()))
+                                .content(json.write(car).getJson())
+                                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                                .accept(MediaType.APPLICATION_JSON_UTF8))
+                .andExpect(status().isOk())
+                .andDo(MockMvcResultHandlers.print())
+                .andExpect(jsonPath("$.condition", is(Condition.NEW.toString())))
+                .andExpect(jsonPath("$.details.numberOfDoors",is(carupdate.getDetails().getNumberOfDoors())))
+                .andExpect(jsonPath("$.details.manufacturer.code",is(carupdate.getDetails().getManufacturer().getCode())))
+                .andExpect(jsonPath("$.details.manufacturer.name",is(carupdate.getDetails().getManufacturer().getName())))
+                .andExpect(jsonPath("$.details.numberOfDoors",is(carupdate.getDetails().getNumberOfDoors())))
+                .andExpect(jsonPath("$.details.mileage",is(carupdate.getDetails().getMileage())))
+                .andExpect(jsonPath("$.details.externalColor",is(carupdate.getDetails().getExternalColor())))
+                .andExpect(jsonPath("$.location.lat",is(carupdate.getLocation().getLat())))
+                .andExpect(jsonPath("$.location.lon",is(carupdate.getLocation().getLon())))
+;
+    }
+
 
     /**
      * Creates an example Car object for use in testing.
